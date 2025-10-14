@@ -1,56 +1,111 @@
-
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { User, UserRole } from '../types';
-import { api } from '../services/mockApi';
+import { authService } from '../services/authService';
+import type { User as UserProfile } from '../services/supabaseClient';
+import type { User as AuthUser } from '@supabase/supabase-js';
+
+// The user object in our auth context can be the full profile,
+// or a partial object if the profile is not yet available.
+export type AuthStateUser = UserProfile | (Partial<UserProfile> & { id: string; email?: string; name?: string });
+
+
+interface SignUpData {
+    name: string;
+    email: string;
+    phone: string;
+    companyName: string;
+    password: string;
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthStateUser | null;
   loading: boolean;
-  login: (email: string, pass: string) => Promise<User | null>;
-  logout: () => void;
-  signup: (name: string, email: string, phone: string, companyName: string) => Promise<User | null>;
+  login: (email: string, pass: string) => Promise<any>;
+  logout: () => Promise<void>;
+  signup: (data: SignUpData) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthStateUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate checking for a logged-in user in localStorage
-    const storedUser = localStorage.getItem('mordomozap_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    // Setar o usuário inicial com base na sessão existente
+    const checkCurrentUser = async () => {
+      console.log('🔍 [useAuth] Verificando usuário atual...');
+      const userProfile = await authService.getCurrentUser();
+      
+      if (userProfile) {
+        console.log('👤 [useAuth] Usuário e perfil encontrados na sessão.');
+        setUser(userProfile);
+      } else {
+        console.log('👤 [useAuth] Nenhum usuário autenticado');
+      }
+      
+      setLoading(false);
+    };
+
+    checkCurrentUser();
+
+    // Escutar por mudanças no estado de autenticação (login, logout)
+    const subscription = authService.onAuthStateChange(async (event, session) => {
+      console.log('🔔 [useAuth] Evento de auth:', event);
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        console.log('✅ [useAuth] Evento SIGNED_IN, carregando perfil...');
+        setLoading(true);
+        
+        const profile = await authService.getUserProfile(session.user.id);
+        
+        if (profile) {
+          console.log('✅ [useAuth] Perfil carregado via listener');
+          setUser(profile);
+        } else {
+          console.warn('⚠️ [useAuth] Perfil não encontrado via listener, usando fallback');
+          setUser({
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.user_metadata?.name,
+          });
+        }
+        
+        setLoading(false);
+      } else if (event === 'SIGNED_OUT') {
+        console.log('👋 [useAuth] Evento SIGNED_OUT');
+        setUser(null);
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, pass: string) => {
-    setLoading(true);
-    const loggedInUser = await api.login(email, pass);
-    if (loggedInUser) {
-      setUser(loggedInUser);
-      localStorage.setItem('mordomozap_user', JSON.stringify(loggedInUser));
+    console.log('🔐 [useAuth] Executando login...');
+    const userProfile = await authService.signIn(email, pass);
+    if (userProfile) {
+      setUser(userProfile);
     }
-    setLoading(false);
-    return loggedInUser;
+    return userProfile;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    console.log('👋 [useAuth] Executando logout...');
+    await authService.signOut();
     setUser(null);
-    localStorage.removeItem('mordomozap_user');
   };
   
-  const signup = async (name: string, email: string, phone: string, companyName: string) => {
-    setLoading(true);
-    const newUser = await api.signup(name, email, phone, companyName);
-    if (newUser) {
-      setUser(newUser);
-      localStorage.setItem('mordomozap_user', JSON.stringify(newUser));
+  const signup = async (data: SignUpData) => {
+    console.log('📝 [useAuth] Executando signup...');
+    const userProfile = await authService.signUp(data.email, data.password, data.name, data.phone, data.companyName);
+    
+    if (userProfile) {
+      setUser(userProfile);
     }
-    setLoading(false);
-    return newUser;
+    
+    return userProfile;
   };
 
   return (

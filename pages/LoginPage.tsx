@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -11,6 +10,7 @@ const LoginPage: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
     
     const navigate = useNavigate();
@@ -19,17 +19,20 @@ const LoginPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setSuccess('');
+
+        if (!email || !password) {
+            setError('Por favor, preencha todos os campos');
+            return;
+        }
+
         setLoading(true);
         try {
-            const user = await login(email, password);
-            if (user) {
-                navigate('/dashboard');
-            } else {
-                setError('E-mail ou senha inválidos.');
-            }
-        } catch (err) {
-            setError('Ocorreu um erro inesperado.');
-        } finally {
+            await login(email, password);
+            setSuccess('Login realizado com sucesso!');
+            setTimeout(() => navigate('/dashboard'), 1500);
+        } catch (err: any) {
+            setError(err.message || 'E-mail ou senha inválidos.');
             setLoading(false);
         }
     };
@@ -45,7 +48,8 @@ const LoginPage: React.FC = () => {
                     <input type="email" placeholder="Seu e-mail" value={email} onChange={e => setEmail(e.target.value)} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
                     <input type="password" placeholder="Sua senha" value={password} onChange={e => setPassword(e.target.value)} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
                     
-                    {error && <p className="text-red-500 text-sm">{error}</p>}
+                    {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                    {success && <p className="text-green-500 text-sm text-center">{success}</p>}
                     
                     <Button type="submit" variant="primary" className="w-full" disabled={loading}>
                         {loading ? 'Entrando...' : 'Entrar'}

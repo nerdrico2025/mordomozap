@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -12,8 +11,11 @@ const SignUpPage: React.FC = () => {
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [companyName, setCompanyName] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
     
     const navigate = useNavigate();
@@ -21,24 +23,39 @@ const SignUpPage: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
+        setSuccess('');
+
+        if (!name || !email || !phone || !companyName || !password || !confirmPassword) {
+            setError('Por favor, preencha todos os campos');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setError('As senhas não coincidem.');
+            return;
+        }
+
         if (!termsAccepted) {
             setError('Você precisa aceitar os termos da LGPD.');
             return;
         }
-        setError('');
+
         setLoading(true);
 
         try {
-            // This would trigger the n8n flow: flow.user_signup
-            const user = await signup(name, email, phone, companyName);
-            if (user) {
-                navigate('/onboarding');
-            } else {
-                setError('Falha ao criar conta. Tente novamente.');
-            }
-        } catch (err) {
-            setError('Ocorreu um erro inesperado.');
-        } finally {
+            console.log('📝 [SignUpPage] Iniciando cadastro...');
+            
+            await signup({ name, email, phone, companyName, password });
+            
+            console.log('✅ [SignUpPage] Cadastro concluído, redirecionando...');
+            
+            setSuccess('Conta criada com sucesso!');
+            setTimeout(() => navigate('/onboarding'), 1500);
+            
+        } catch (err: any) {
+            console.error('❌ [SignUpPage] Erro no cadastro:', err);
+            setError(err.message || 'Falha ao criar conta. Verifique os dados e tente novamente.');
             setLoading(false);
         }
     };
@@ -56,13 +73,16 @@ const SignUpPage: React.FC = () => {
                     <input type="email" placeholder="Seu e-mail" value={email} onChange={e => setEmail(e.target.value)} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
                     <input type="tel" placeholder="Seu telefone (WhatsApp)" value={phone} onChange={e => setPhone(e.target.value)} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
                     <input type="text" placeholder="Nome da sua empresa" value={companyName} onChange={e => setCompanyName(e.target.value)} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+                    <input type="password" placeholder="Crie uma senha" value={password} onChange={e => setPassword(e.target.value)} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+                    <input type="password" placeholder="Confirme sua senha" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
                     
                     <div className="flex items-center">
                         <input type="checkbox" id="terms" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" />
                         <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">Eu aceito os termos da LGPD.</label>
                     </div>
                     
-                    {error && <p className="text-red-500 text-sm">{error}</p>}
+                    {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                    {success && <p className="text-green-500 text-sm text-center">{success}</p>}
                     
                     <Button type="submit" variant="primary" className="w-full" disabled={loading}>
                         {loading ? 'Criando conta...' : 'Começar Trial'}

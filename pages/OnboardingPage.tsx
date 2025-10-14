@@ -1,104 +1,149 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { geminiService, GeminiOnboardingResponse, OnboardingStep } from '../services/geminiService';
+import { geminiService, OnboardingStep } from '../services/geminiService';
 import Button from '../components/Button';
+import Card from '../components/Card';
 
 const MORDOMO_LOGO_URL = 'https://dutzohcickrbmlolcjtp.supabase.co/storage/v1/object/public/mordomo/logo-mordomo.png';
 
+interface Message {
+    sender: 'user' | 'ai';
+    text: string;
+    requiresConfirmation?: boolean;
+    actionToConfirm?: string;
+}
 
 const OnboardingPage: React.FC = () => {
-    const [steps, setSteps] = useState<OnboardingStep[]>([]);
-    const [messages, setMessages] = useState<{ text: string, sender: 'user' | 'ai' }[]>([]);
-    const [currentResponse, setCurrentResponse] = useState<GeminiOnboardingResponse | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const messagesEndRef = useRef<null | HTMLDivElement>(null);
     const navigate = useNavigate();
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [steps, setSteps] = useState<OnboardingStep[]>([]);
+    const [userInput, setUserInput] = useState('');
+    const [loading, setLoading] = useState(false);
+    const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
+    };
 
     useEffect(scrollToBottom, [messages]);
 
+    // Initial message from AI
     useEffect(() => {
         const startOnboarding = async () => {
-            setIsLoading(true);
-            const response = await geminiService.getOnboardingResponse('start');
-            setMessages([{ text: response.responseText, sender: 'ai' }]);
-            setCurrentResponse(response);
+            setLoading(true);
+            const response = await geminiService.getOnboardingResponse('');
+            setMessages([{ sender: 'ai', text: response.responseText, requiresConfirmation: response.requiresConfirmation, actionToConfirm: response.actionToConfirm }]);
             if (response.updatedSteps) {
                 setSteps(response.updatedSteps);
             }
-            setIsLoading(false);
+            setLoading(false);
         };
         startOnboarding();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const handleConfirm = async (action: string) => {
-        setIsLoading(true);
-        setCurrentResponse(null);
-        setMessages(prev => [...prev, { text: `Confirmado: ${action}`, sender: 'user' }]);
+    const sendMessage = async (messageText: string, confirmedAction?: string) => {
+        if (!messageText && !confirmedAction) return;
 
-        // This would call the n8n flow for the specific action
-        // e.g., flow.onboarding_start -> connect_whatsapp
-        console.log(`Action confirmed, triggering n8n flow for: ${action}`);
+        const newMessages: Message[] = [...messages];
+        if (messageText) {
+            newMessages.push({ sender: 'user', text: messageText });
+        }
+        setMessages(newMessages);
+        setUserInput('');
+        setLoading(true);
 
-        const response = await geminiService.getOnboardingResponse('', action);
-        
-        if (response.nextStep === 'done') {
-            setTimeout(() => navigate('/dashboard'), 3000);
+        try {
+            const response = await geminiService.getOnboardingResponse(messageText, confirmedAction);
+            setMessages(prev => [...prev, { sender: 'ai', text: response.responseText, requiresConfirmation: response.requiresConfirmation, actionToConfirm: response.actionToConfirm }]);
+            if (response.updatedSteps) {
+                setSteps(response.updatedSteps);
+            }
+            if (response.nextStep === 'done') {
+                setTimeout(() => navigate('/dashboard'), 3000);
+            }
+        } catch (error) {
+            setMessages(prev => [...prev, { sender: 'ai', text: "Desculpe, ocorreu um erro. Tente novamente." }]);
+        } finally {
+            setLoading(false);
         }
+    };
+
+    const handleConfirm = (action: string | undefined) => {
+        if (!action) return;
+        const confirmationText = "Sim, confirmo.";
+        // Optimistically update UI
+        const newMessages: Message[] = [...messages];
+        newMessages.push({ sender: 'user', text: confirmationText });
+        setMessages(newMessages);
         
-        setMessages(prev => [...prev, { text: response.responseText, sender: 'ai' }]);
-        setCurrentResponse(response);
-        if (response.updatedSteps) {
-            setSteps(response.updatedSteps);
-        }
-        setIsLoading(false);
+        sendMessage('', action);
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        sendMessage(userInput);
     };
 
     return (
         <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-            <div className="flex w-full max-w-6xl h-[80vh] bg-white rounded-2xl shadow-2xl">
-                {/* Sidebar */}
-                <div className="w-1/3 bg-gray-800 text-white p-8 rounded-l-2xl flex flex-col">
-                    <img src={MORDOMO_LOGO_URL} alt="Logo" className="h-12 mb-8"/>
-                    <h2 className="text-2xl font-bold mb-6">Configuração Inicial</h2>
-                    <p className="text-gray-300 mb-8">Siga os passos do nosso assistente para deixar tudo pronto.</p>
-                    <ul className="space-y-4">
-                        {steps.map(step => (
-                            <li key={step.id} className="flex items-center">
-                                <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 ${step.completed ? 'bg-primary' : 'border-2 border-gray-500'}`}>
-                                    {step.completed && <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>}
+            <div className="w-full max-w-4xl mx-auto">
+                 <img src={MORDOMO_LOGO_URL} alt="MordomoZAP Logo" className="h-12 mx-auto mb-6"/>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {/* Steps */}
+                    <Card className="md:col-span-1">
+                        <h2 className="font-bold text-lg mb-4">Seu Progresso</h2>
+                        <ul className="space-y-3">
+                            {steps.map(step => (
+                                <li key={step.id} className={`flex items-center text-sm ${step.completed ? 'text-gray-800 font-semibold' : 'text-gray-500'}`}>
+                                    <span className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center ${step.completed ? 'bg-primary text-white' : 'bg-gray-200'}`}>
+                                       {step.completed && '✓'}
+                                    </span>
+                                    {step.text}
+                                 </li>
+                            ))}
+                        </ul>
+                    </Card>
+
+                    {/* Chat */}
+                    <Card className="md:col-span-2 flex flex-col h-[70vh]">
+                        <h2 className="font-bold text-lg mb-4 border-b pb-2">Consultor de Onboarding IA</h2>
+                        <div className="flex-grow overflow-y-auto pr-2 space-y-4">
+                            {messages.map((msg, index) => (
+                                <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`rounded-lg px-4 py-2 max-w-sm ${msg.sender === 'user' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'}`}>
+                                        <p>{msg.text}</p>
+                                        {msg.requiresConfirmation && (
+                                            <div className="mt-2 space-x-2">
+                                                <Button onClick={() => handleConfirm(msg.actionToConfirm)} variant="secondary" className="py-1 px-3 text-sm">Confirmar</Button>
+                                                <Button variant="secondary" className="py-1 px-3 text-sm bg-gray-300">Pular</Button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                <span className={`${step.completed ? 'text-white' : 'text-gray-400'}`}>{step.text}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-                {/* Chat */}
-                <div className="w-2/3 flex flex-col p-6">
-                    <div className="flex-grow overflow-y-auto mb-4 pr-4">
-                        {messages.map((msg, index) => (
-                            <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
-                                <div className={`max-w-md p-4 rounded-2xl ${msg.sender === 'user' ? 'bg-primary text-white rounded-br-none' : 'bg-gray-200 text-gray-800 rounded-bl-none'}`}>
-                                    <p>{msg.text}</p>
+                            ))}
+                             {loading && (
+                                 <div className="flex justify-start">
+                                    <div className="rounded-lg px-4 py-2 bg-gray-200 text-gray-800">
+                                        Digitando...
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                         {isLoading && <div className="flex justify-start"><div className="bg-gray-200 p-4 rounded-2xl rounded-bl-none">Digitando...</div></div>}
-                        <div ref={messagesEndRef} />
-                    </div>
-                    {currentResponse?.requiresConfirmation && currentResponse.actionToConfirm && (
-                        <div className="flex justify-end space-x-4 p-4 border-t">
-                            <Button variant="secondary" onClick={() => console.log('Cancelled')}>Cancelar</Button>
-                            <Button variant="primary" onClick={() => handleConfirm(currentResponse.actionToConfirm!)} disabled={isLoading}>
-                                Confirmar
-                            </Button>
+                            )}
+                            <div ref={messagesEndRef} />
                         </div>
-                    )}
+                        <form onSubmit={handleSubmit} className="mt-4 flex border-t pt-4">
+                            <input
+                                type="text"
+                                value={userInput}
+                                onChange={(e) => setUserInput(e.target.value)}
+                                placeholder="Digite sua resposta..."
+                                className="flex-grow px-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                                disabled={loading || messages[messages.length - 1]?.requiresConfirmation}
+                            />
+                            <Button type="submit" className="rounded-l-none" disabled={loading || messages[messages.length - 1]?.requiresConfirmation}>
+                                Enviar
+                            </Button>
+                        </form>
+                    </Card>
                 </div>
             </div>
         </div>
