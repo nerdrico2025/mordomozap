@@ -1,0 +1,5 @@
+{
+  "name": "MordomoZAP",
+  "description": "MordomoZAP allows small businesses to configure and manage an AI-powered customer service and scheduling agent connected to the customer's WhatsApp via UAZAPI.",
+  "requestFramePermissions": []
+}
