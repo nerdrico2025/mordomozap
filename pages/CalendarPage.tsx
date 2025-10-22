@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { appointmentService } from '../services/appointmentService';
 import { useAuth } from '../hooks/useAuth';
-import type { Appointment } from '../services/supabaseClient';
+// FIX: Changed import path for Appointment type from supabaseClient to the centralized types file.
+import type { Appointment } from '../types';
 import Card from '../components/Card';
 import Button from '../components/Button';
 
@@ -11,6 +12,12 @@ const CalendarPage: React.FC = () => {
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [loading, setLoading] = useState(true);
     const { user } = useAuth();
+
+    const statusStyles: { [key in Appointment['status']]: string } = {
+        confirmed: 'bg-blue-500 hover:bg-blue-600',
+        completed: 'bg-green-500',
+        cancelled: 'bg-red-500 line-through opacity-70',
+    };
     
     const fetchAppointments = async () => {
         if (user) {
@@ -29,14 +36,14 @@ const CalendarPage: React.FC = () => {
         const confirmed = window.confirm("Tem certeza que deseja cancelar este agendamento?");
         if (confirmed) {
             await appointmentService.cancelAppointment(id);
-            setSelectedAppointment(null);
+            if (selectedAppointment?.id === id) setSelectedAppointment(null);
             fetchAppointments(); // Refresh list
         }
     };
 
     const handleCompleteAppointment = async (id: string) => {
         await appointmentService.completeAppointment(id);
-        setSelectedAppointment(null);
+        if (selectedAppointment?.id === id) setSelectedAppointment(null);
         fetchAppointments(); // Refresh list
     };
 
@@ -58,11 +65,34 @@ const CalendarPage: React.FC = () => {
                 <span className="font-bold">{day}</span>
                 <div className="mt-1 space-y-1 overflow-y-auto">
                     {dayAppointments.map(app => (
-                        <div key={app.id} onClick={() => setSelectedAppointment(app)} className={`text-white text-xs p-1 rounded cursor-pointer hover:opacity-80 ${
-                            app.status === 'confirmed' ? 'bg-primary' :
-                            app.status === 'completed' ? 'bg-gray-500' : 'bg-red-500 line-through'
-                        }`}>
-                           {new Date(app.datetime_start).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} - {app.customer_name}
+                        <div key={app.id} className="relative group text-white">
+                            <div 
+                                onClick={() => setSelectedAppointment(app)}
+                                className={`text-xs p-1 rounded cursor-pointer transition-colors ${statusStyles[app.status]}`}
+                            >
+                               {new Date(app.datetime_start).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} - {app.customer_name}
+                            </div>
+                            
+                            {app.status === 'confirmed' && (
+                                <div className="absolute top-0 right-0 hidden group-hover:flex items-center bg-black bg-opacity-40 rounded-r h-full">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleCompleteAppointment(app.id); }} 
+                                        className="p-1 h-full hover:bg-green-600 transition-colors"
+                                        aria-label="Marcar como Concluído"
+                                        title="Marcar como Concluído"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                    </button>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleCancelAppointment(app.id); }} 
+                                        className="p-1 h-full hover:bg-red-600 transition-colors rounded-r"
+                                        aria-label="Cancelar Agendamento"
+                                        title="Cancelar Agendamento"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>
@@ -83,6 +113,13 @@ const CalendarPage: React.FC = () => {
                     <h2 className="text-xl font-bold">{currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</h2>
                     <Button onClick={() => changeMonth(1)} variant="secondary">Próximo &gt;</Button>
                 </div>
+                
+                <div className="flex justify-end items-center space-x-4 mb-2 text-xs text-gray-600">
+                    <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-blue-500 mr-1.5"></span> Confirmado</div>
+                    <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-green-500 mr-1.5"></span> Concluído</div>
+                    <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-red-500 mr-1.5"></span> Cancelado</div>
+                </div>
+
                 <div className="grid grid-cols-7">
                      {['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'].map(day => (
                         <div key={day} className="text-center font-bold p-2 border-b-2">{day}</div>

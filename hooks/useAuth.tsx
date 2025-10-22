@@ -1,7 +1,8 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { authService } from '../services/authService';
-import type { User as UserProfile } from '../services/supabaseClient';
-import type { User as AuthUser } from '@supabase/supabase-js';
+// FIX: Changed import path for UserProfile type from supabaseClient to the centralized types file.
+import type { User as UserProfile } from '../types';
+import type { User as AuthUser, Session } from '@supabase/supabase-js';
 
 // The user object in our auth context can be the full profile,
 // or a partial object if the profile is not yet available.
@@ -22,6 +23,7 @@ interface AuthContextType {
   login: (email: string, pass: string) => Promise<any>;
   logout: () => Promise<void>;
   signup: (data: SignUpData) => Promise<any>;
+  updateUser: (updates: Partial<AuthStateUser>) => void; // Função adicionada
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,32 +50,40 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
 
     checkCurrentUser();
 
-    // Escutar por mudanças no estado de autenticação (login, logout)
-    const subscription = authService.onAuthStateChange(async (event, session) => {
+    // Listener é a única fonte da verdade para carregar o perfil após eventos de auth.
+    const subscription = authService.onAuthStateChange(async (event: string, session: Session | null) => {
       console.log('🔔 [useAuth] Evento de auth:', event);
       
       if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ [useAuth] Evento SIGNED_IN, carregando perfil...');
         setLoading(true);
-        
-        const profile = await authService.getUserProfile(session.user.id);
+
+        // Tenta buscar o perfil com retentativas, pois pode haver um delay
+        // após o signup para o perfil ser criado no banco.
+        let profile = null;
+        for (let attempt = 0; attempt < 5; attempt++) {
+            profile = await authService.getUserProfile(session.user.id);
+            if (profile) {
+                console.log(`✅ [useAuth] Perfil encontrado na tentativa ${attempt + 1}.`);
+                break;
+            }
+            console.log(`⏳ [useAuth] Perfil não encontrado, tentando novamente... (${attempt + 1}/5)`);
+            await new Promise(res => setTimeout(res, 1000));
+        }
         
         if (profile) {
-          console.log('✅ [useAuth] Perfil carregado via listener');
           setUser(profile);
         } else {
-          console.warn('⚠️ [useAuth] Perfil não encontrado via listener, usando fallback');
-          setUser({
-            id: session.user.id,
-            email: session.user.email,
-            name: session.user.user_metadata?.name,
-          });
+          console.error('❌ [useAuth] Perfil não encontrado via listener após várias tentativas. Forçando logout para prevenir estado inconsistente.');
+          authService.signOut(); // Dispara um evento SIGNED_OUT
         }
         
         setLoading(false);
+
       } else if (event === 'SIGNED_OUT') {
         console.log('👋 [useAuth] Evento SIGNED_OUT');
         setUser(null);
+        setLoading(false); // Garante que o loading para se um sign out acontecer
       }
     });
 
@@ -84,11 +94,8 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
 
   const login = async (email: string, pass: string) => {
     console.log('🔐 [useAuth] Executando login...');
-    const userProfile = await authService.signIn(email, pass);
-    if (userProfile) {
-      setUser(userProfile);
-    }
-    return userProfile;
+    await authService.signIn(email, pass);
+    // O listener onAuthStateChange irá lidar com o carregamento do perfil e atualização do estado.
   };
 
   const logout = async () => {
@@ -99,17 +106,16 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
   
   const signup = async (data: SignUpData) => {
     console.log('📝 [useAuth] Executando signup...');
-    const userProfile = await authService.signUp(data.email, data.password, data.name, data.phone, data.companyName);
-    
-    if (userProfile) {
-      setUser(userProfile);
-    }
-    
-    return userProfile;
+    await authService.signUp(data.email, data.password, data.name, data.phone, data.companyName);
+     // O listener onAuthStateChange irá lidar com o carregamento do perfil e atualização do estado.
+  };
+
+  const updateUser = (updates: Partial<AuthStateUser>) => {
+    setUser(prevUser => prevUser ? { ...prevUser, ...updates } : null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, signup }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, signup, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -4,8 +4,10 @@ import { User, UserRole, Company, DashboardData, SuperAdminData, Conversation, A
 // --- MOCK DATABASE ---
 
 const mockUsers: User[] = [
-  { id: 'user-1', name: 'Usuário Teste', email: 'user@test.com', phone: '11999998888', role: UserRole.USER, company_id: 'company-1', created_at: new Date().toISOString() },
-  { id: 'user-2', name: 'Super Admin', email: 'admin@test.com', phone: '11988887777', role: UserRole.SUPER_ADMIN, company_id: 'company-2', created_at: new Date().toISOString() },
+  // FIX: Added onboarding_completed property to satisfy the User interface.
+  { id: 'user-1', name: 'Usuário Teste', email: 'user@test.com', phone: '11999998888', role: UserRole.USER, company_id: 'company-1', onboarding_completed: false, created_at: new Date().toISOString() },
+  // FIX: Added onboarding_completed property to satisfy the User interface.
+  { id: 'user-2', name: 'Super Admin', email: 'admin@test.com', phone: '11988887777', role: UserRole.SUPER_ADMIN, company_id: 'company-2', onboarding_completed: true, created_at: new Date().toISOString() },
 ];
 
 const mockCompanies: Company[] = [
@@ -27,16 +29,49 @@ const mockAppointments: Appointment[] = [
     { id: 'appt-3', company_id: 'company-1', customer_name: 'Helena Correa', phone: '11989012345', datetime_start: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), datetime_end: new Date(Date.now() + (10 * 24 * 60 * 60 * 1000) + (30 * 60 * 1000)).toISOString(), status: 'confirmed', notes: 'Reunião de acompanhamento.', conversation_id: 'conv-5' },
 ];
 
+// FIX: Added missing properties `products` and `professionals` to satisfy the AgentConfig interface.
 let mockAgentConfig: AgentConfig = {
     greetingMessage: 'Olá! Bem-vindo à Empresa Teste. Como posso ajudar?',
     fallbackMessage: 'Desculpe, não entendi. Um de nossos atendentes entrará em contato em breve.',
     workingHours: [
         { day: 'Segunda', start: '09:00', end: '18:00', enabled: true },
-        // ... other days
+        { day: 'Terça', start: '09:00', end: '18:00', enabled: true },
+        { day: 'Quarta', start: '09:00', end: '18:00', enabled: true },
+        { day: 'Quinta', start: '09:00', end: '18:00', enabled: true },
+        { day: 'Sexta', start: '09:00', end: '18:00', enabled: true },
+        { day: 'Sábado', start: '09:00', end: '12:00', enabled: false },
+        { day: 'Domingo', start: '09:00', end: '12:00', enabled: false },
     ],
     faqs: [
         { question: 'Qual o preço?', answer: 'Nossos planos começam em R$99/mês.' }
     ],
+    // FIX: Added missing `duration` property to products to satisfy the Product interface.
+    products: [
+        { name: 'Corte de Cabelo', price: 'R$ 50,00', duration: 30 },
+        { name: 'Manicure', price: 'R$ 30,00', duration: 60 }
+    ],
+    // FIX: Added missing `workingHours` property to professionals to satisfy the Professional interface.
+    professionals: [
+        { name: 'João Cabeleireiro', phone: '11911112222', services: ['Corte de Cabelo'], workingHours: [
+            { day: 'Segunda', start: '09:00', end: '18:00', enabled: true },
+            { day: 'Terça', start: '09:00', end: '18:00', enabled: true },
+            { day: 'Quarta', start: '09:00', end: '18:00', enabled: true },
+            { day: 'Quinta', start: '09:00', end: '18:00', enabled: true },
+            { day: 'Sexta', start: '09:00', end: '18:00', enabled: true },
+            { day: 'Sábado', start: '09:00', end: '12:00', enabled: true },
+            { day: 'Domingo', start: '09:00', end: '12:00', enabled: false },
+        ]},
+        { name: 'Maria Manicure', phone: '11933334444', services: ['Manicure'], workingHours: [
+            { day: 'Segunda', start: '09:00', end: '18:00', enabled: true },
+            { day: 'Terça', start: '09:00', end: '18:00', enabled: true },
+            { day: 'Quarta', start: '09:00', end: '18:00', enabled: true },
+            { day: 'Quinta', start: '09:00', end: '18:00', enabled: true },
+            { day: 'Sexta', start: '09:00', end: '18:00', enabled: true },
+            { day: 'Sábado', start: '09:00', end: '12:00', enabled: false },
+            { day: 'Domingo', start: '09:00', end: '12:00', enabled: false },
+        ]}
+    ],
+    // FIX: Corrected schedulingRules to include slotDuration, matching the AgentConfig interface.
     schedulingRules: {
         slotDuration: 30, // in minutes
         allowBookingUpTo: 14 // in days
@@ -61,7 +96,8 @@ export const api = {
       const newUserId = `user-${Date.now()}`;
       
       const newCompany: Company = { id: newCompanyId, name: companyName, timezone: 'America/Sao_Paulo', plan: 'trial', trial_ends_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), status: 'trialing', created_at: new Date().toISOString() };
-      const newUser: User = { id: newUserId, name, email, phone, role: UserRole.USER, company_id: newCompanyId, created_at: new Date().toISOString() };
+      // FIX: Added onboarding_completed property to satisfy the User interface. A new user should start with this as false.
+      const newUser: User = { id: newUserId, name, email, phone, role: UserRole.USER, company_id: newCompanyId, onboarding_completed: false, created_at: new Date().toISOString() };
 
       mockCompanies.push(newCompany);
       mockUsers.push(newUser);

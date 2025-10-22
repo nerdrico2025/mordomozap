@@ -19,11 +19,13 @@ const Header = () => {
     try {
       console.log('👋 [Header] Iniciando logout...');
       await logout();
-      console.log('✅ [Header] Logout concluído, redirecionando...');
-      navigate('/login');
+      // A navegação será tratada reativamente pelo PrivateRoute
+      // quando o estado do usuário for atualizado para nulo.
+      console.log('✅ [Header] Logout concluído.');
     } catch (error) {
       console.error('❌ [Header] Erro ao fazer logout:', error);
       alert('Erro ao fazer logout. Tente novamente.');
+    } finally {
       setIsLoggingOut(false);
     }
   };

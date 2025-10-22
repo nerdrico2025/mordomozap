@@ -1,129 +1,85 @@
-import { supabase } from './supabaseClient'
-import type { WhatsAppIntegration } from './supabaseClient'
-import type { RealtimeChannel } from '@supabase/supabase-js'
+import axios from 'axios';
+import { supabaseAdmin } from './supabaseAdminClient';
+import type { WhatsAppIntegration } from '../types';
 
-// Usando a mesma URL fixa do n8n que está no authService para este ambiente.
-const N8N_WEBHOOK_BASE = 'https://ferramentas-n8n.u7pe19.easypanel.host/webhook-test/cc912118-8afe-4a22-a78e-11425216d2d1';
+// The frontend service now communicates with our OWN backend proxy, not UAZAPI.
+// FIX: Construct a full, absolute URL to prevent "Invalid URL" errors in sandboxed environments.
+const PROXY_BASE_URL = `${window.location.protocol}//${window.location.host}`;
+const PROXY_ENDPOINT = `${PROXY_BASE_URL}/api/uaz`;
+
 
 export const whatsappService = {
-  // Iniciar processo de onboarding (gerar QR Code)
-  async startOnboarding(companyId: string) {
-    try {
-      const response = await fetch(`${N8N_WEBHOOK_BASE}/onboarding/start`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ companyId }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Erro ao iniciar onboarding')
-      }
-
-      return await response.json()
-    } catch (error) {
-      console.error('Erro no onboarding:', error)
-      throw error
-    }
+  async getIntegration(companyId: string): Promise<WhatsAppIntegration | null> {
+    const { data, error } = await supabaseAdmin.from('whatsapp_integrations').select('*').eq('company_id', companyId).single();
+    if (error && error.code !== 'PGRST116') throw error;
+    return data;
   },
 
-  // Obter status atual da integração WhatsApp
   async getIntegrationStatus(companyId: string): Promise<WhatsAppIntegration | null> {
     try {
-      const { data, error } = await supabase
-        .from('whatsapp_integrations')
-        .select('*')
-        .eq('company_id', companyId)
-        .single()
+      const { data: proxyResponse } = await axios.post(`${PROXY_ENDPOINT}/status`, { companyId });
+      const isConnected = !!proxyResponse.connected;
+      const targetStatus = isConnected ? 'connected' : 'disconnected';
+      const { data: currentDbState } = await this.getIntegration(companyId);
 
-      if (error) {
-        // Se não existir integração, retornar null
-        if (error.code === 'PGRST116') {
-          return null
-        }
-        throw error
+      if (currentDbState?.status !== targetStatus) {
+        const { data: updated } = await supabaseAdmin.from('whatsapp_integrations').update({ 
+            status: targetStatus, 
+            qr_code_base64: null,
+            connected_at: isConnected ? new Date().toISOString() : null,
+        }).eq('company_id', companyId).select().single();
+        return updated;
       }
-    
-      return data
-    } catch (error) {
-      console.error('Erro ao obter status:', error)
-      return null
+      return currentDbState;
+    } catch (err: any) {
+      console.warn('Falha na verificação de status via proxy, tratando como desconectado.', err);
+      const { data: updated } = await supabaseAdmin.from('whatsapp_integrations').update({ status: 'disconnected', api_key: null, qr_code_base64: null }).eq('company_id', companyId).select().single();
+      return updated;
     }
   },
 
-  // Escutar atualizações do QR Code em tempo real
-  subscribeToQRCode(companyId: string, callback: (data: WhatsAppIntegration) => void) {
-    const channel = supabase
-      .channel(`whatsapp-integration-${companyId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Escuta INSERT e UPDATE
-          schema: 'public',
-          table: 'whatsapp_integrations',
-          filter: `company_id=eq.${companyId}`
-        },
-        (payload) => {
-          console.log('Mudança na Integração WhatsApp:', payload)
-          callback(payload.new as WhatsAppIntegration)
-        }
-      )
-      .subscribe()
-
-    return channel
-  },
-
-  // Desconectar WhatsApp
-  async disconnect(companyId: string) {
+  async startConnection(companyId: string): Promise<WhatsAppIntegration> {
     try {
-      const { data, error } = await supabase
-        .from('whatsapp_integrations')
-        .update({ 
-          status: 'disconnected',
-          qr_code_base64: null,
-          connected_at: null
-        })
-        .eq('company_id', companyId)
-        .select()
+      const { data: proxyResponse } = await axios.post(`${PROXY_ENDPOINT}/start-connection`, { companyId });
+      
+      const { instanceName, apiKey, qrCodeBase64 } = proxyResponse;
+      if (!apiKey || !instanceName || !qrCodeBase64) {
+        throw new Error('Resposta inválida do servidor de proxy.');
+      }
+      
+      const { data: upserted, error } = await supabaseAdmin.from('whatsapp_integrations').upsert({
+          company_id: companyId,
+          provider: 'uazapi',
+          instance_name: instanceName,
+          api_key: apiKey,
+          status: 'pending',
+          qr_code_base64: qrCodeBase64,
+      }, { onConflict: 'company_id' }).select().single();
 
-      if (error) throw error
-      return data
-    } catch (error) {
-      console.error('Erro ao desconectar:', error)
-      throw error
+      if (error) throw error;
+      return upserted;
+    } catch (err: any) {
+      console.error('Error starting connection via proxy:', err.response?.data ?? err.message);
+      throw new Error(err.response?.data?.error || 'A comunicação com o servidor para iniciar a instância falhou.');
     }
   },
 
-  // Reconectar WhatsApp (gerar novo QR Code)
-  async reconnect(companyId: string) {
+  async disconnect(companyId: string): Promise<void> {
     try {
-      // Primeiro desconectar
-      await this.disconnect(companyId)
-    
-      // Depois iniciar novo onboarding
-      return await this.startOnboarding(companyId)
-    } catch (error) {
-      console.error('Erro ao reconectar:', error)
-      throw error
+      await axios.post(`${PROXY_ENDPOINT}/disconnect`, { companyId });
+    } catch (err: any) {
+       console.warn('Proxy disconnect failed, but proceeding to update DB state.');
     }
+    await supabaseAdmin.from('whatsapp_integrations').update({ status: 'disconnected', qr_code_base64: null, api_key: null, connected_at: null }).eq('company_id', companyId);
   },
 
-  // Verificar se WhatsApp está conectado
-  async isConnected(companyId: string): Promise<boolean> {
+  async sendTestMessage(companyId: string, to: string, message: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const integration = await this.getIntegrationStatus(companyId)
-      return integration?.status === 'connected'
-    } catch (error) {
-      console.error('Erro ao verificar conexão:', error)
-      return false
-    }
-  },
-
-  // Cancelar subscrição (cleanup)
-  unsubscribe(subscription: RealtimeChannel | null) {
-    if (subscription) {
-      supabase.removeChannel(subscription)
+        await axios.post(`${PROXY_ENDPOINT}/send-test`, { companyId, to, message });
+        return { success: true };
+    } catch (err: any) {
+        console.error('Error sending message via proxy', err.response?.data);
+        return { success: false, error: err.response?.data?.error || 'Falha ao enviar mensagem.' };
     }
   }
-}
+};

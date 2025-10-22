@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Button from '../components/Button';
@@ -15,16 +15,21 @@ const SignUpPage: React.FC = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
     
     const navigate = useNavigate();
-    const { signup } = useAuth();
+    const { signup, user } = useAuth();
+
+    useEffect(() => {
+        // Se o usuário for definido (cadastro bem-sucedido), navega para o onboarding.
+        if (user) {
+            navigate('/onboarding');
+        }
+    }, [user, navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        setSuccess('');
 
         if (!name || !email || !phone || !companyName || !password || !confirmPassword) {
             setError('Por favor, preencha todos os campos');
@@ -45,14 +50,9 @@ const SignUpPage: React.FC = () => {
 
         try {
             console.log('📝 [SignUpPage] Iniciando cadastro...');
-            
             await signup({ name, email, phone, companyName, password });
-            
-            console.log('✅ [SignUpPage] Cadastro concluído, redirecionando...');
-            
-            setSuccess('Conta criada com sucesso!');
-            setTimeout(() => navigate('/onboarding'), 1500);
-            
+            // Em caso de sucesso, o listener onAuthStateChange irá atualizar o 'user'.
+            // O useEffect acima irá então lidar com a navegação para o onboarding.
         } catch (err: any) {
             console.error('❌ [SignUpPage] Erro no cadastro:', err);
             setError(err.message || 'Falha ao criar conta. Verifique os dados e tente novamente.');
@@ -82,9 +82,8 @@ const SignUpPage: React.FC = () => {
                     </div>
                     
                     {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-                    {success && <p className="text-green-500 text-sm text-center">{success}</p>}
                     
-                    <Button type="submit" variant="primary" className="w-full" disabled={loading}>
+                    <Button type="submit" variant="primary" className="w-full" loading={loading} disabled={loading}>
                         {loading ? 'Criando conta...' : 'Começar Trial'}
                     </Button>
                 </form>

@@ -38,20 +38,20 @@ const SuperAdminPage: React.FC = () => {
                 <table className="w-full text-left">
                     <thead>
                         <tr className="border-b">
-                            <th className="p-2">Empresa</th>
-                            <th className="p-2">E-mail</th>
-                            <th className="p-2">Plano</th>
-                            <th className="p-2">Status</th>
-                            <th className="p-2">Trial Termina em</th>
-                            <th className="p-2">Ações</th>
+                            <th className="p-2 text-sm font-semibold text-gray-700">Empresa</th>
+                            <th className="p-2 text-sm font-semibold text-gray-700">E-mail</th>
+                            <th className="p-2 text-sm font-semibold text-gray-700">Plano</th>
+                            <th className="p-2 text-sm font-semibold text-gray-700">Status</th>
+                            <th className="p-2 text-sm font-semibold text-gray-700">Trial Termina em</th>
+                            <th className="p-2 text-sm font-semibold text-gray-700">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         {data.accounts.map((acc: Company & { user_email: string }) => (
                             <tr key={acc.id} className="border-b hover:bg-gray-50">
-                                <td className="p-2 font-medium">{acc.name}</td>
-                                <td className="p-2">{acc.user_email}</td>
-                                <td className="p-2">{acc.plan}</td>
+                                <td className="p-2 font-medium text-gray-800">{acc.name}</td>
+                                <td className="p-2 text-gray-800">{acc.user_email}</td>
+                                <td className="p-2 text-gray-800">{acc.plan}</td>
                                 <td className="p-2">
                                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                                         acc.status === 'active' ? 'bg-green-100 text-green-800' :
@@ -59,7 +59,7 @@ const SuperAdminPage: React.FC = () => {
                                         'bg-red-100 text-red-800'
                                     }`}>{acc.status}</span>
                                 </td>
-                                <td className="p-2 text-sm text-gray-600">{acc.trial_ends_at ? new Date(acc.trial_ends_at).toLocaleDateString('pt-BR') : 'N/A'}</td>
+                                <td className="p-2 text-sm text-gray-800">{acc.trial_ends_at ? new Date(acc.trial_ends_at).toLocaleDateString('pt-BR') : 'N/A'}</td>
                                 <td className="p-2">
                                     <Button variant="accent" className="py-1 px-3 text-sm" onClick={() => handleResetTrial(acc.id)}>Resetar Trial</Button>
                                 </td>

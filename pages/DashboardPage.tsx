@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { chatService } from '../services/chatService';
 import { analyticsService, IntentInsight } from '../services/analyticsService';
-import type { Conversation } from '../services/supabaseClient';
+// FIX: Changed import path for Conversation type from supabaseClient to the centralized types file.
+import type { Conversation } from '../types';
 import Card from '../components/Card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-const KpiCard: React.FC<{ title: string; value: string | number; children?: React.ReactNode }> = ({ title, value, children }) => (
+// FIX: Made the `value` prop optional to support cards that display child elements without a primary KPI value.
+const KpiCard: React.FC<{ title: string; value?: string | number; children?: React.ReactNode }> = ({ title, value, children }) => (
     <Card>
         <h3 className="text-lg font-semibold text-gray-500">{title}</h3>
-        <p className="text-3xl font-bold text-gray-800 mt-2">{value}</p>
+        {value !== undefined && <p className="text-3xl font-bold text-gray-800 mt-2">{value}</p>}
         {children}
     </Card>
 );

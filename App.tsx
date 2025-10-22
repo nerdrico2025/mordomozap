@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import HomePage from './pages/HomePage';
 import SignUpPage from './pages/SignUpPage';
@@ -14,9 +13,13 @@ import SuperAdminPage from './pages/SuperAdminPage';
 import SupportPage from './pages/SupportPage';
 import Layout from './components/Layout';
 import { UserRole } from './types';
+import { FeedbackProvider } from './hooks/useFeedback';
+import ConversationsPage from './pages/ConversationsPage';
+import ChatPage from './pages/ChatPage';
 
 const PrivateRoute: React.FC<{ children: React.ReactElement; roles?: UserRole[] }> = ({ children, roles }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return <div className="flex justify-center items-center h-screen"><p>Carregando...</p></div>;
@@ -26,6 +29,10 @@ const PrivateRoute: React.FC<{ children: React.ReactElement; roles?: UserRole[] 
     return <Navigate to="/login" />;
   }
   
+  if (!user.onboarding_completed && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" />;
+  }
+
   if (roles && !roles.includes(user.role)) {
     return <Navigate to="/dashboard" />;
   }
@@ -46,6 +53,8 @@ const AppRoutes: React.FC = () => {
       
       <Route element={<Layout />}>
         <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+        <Route path="/conversations" element={<PrivateRoute><ConversationsPage /></PrivateRoute>} />
+        <Route path="/chat/:id" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
         <Route path="/calendar" element={<PrivateRoute><CalendarPage /></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
         <Route path="/super-admin" element={<PrivateRoute roles={[UserRole.SUPER_ADMIN]}><SuperAdminPage /></PrivateRoute>} />
@@ -59,9 +68,11 @@ const AppRoutes: React.FC = () => {
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <HashRouter>
-        <AppRoutes />
-      </HashRouter>
+      <FeedbackProvider>
+        <HashRouter>
+          <AppRoutes />
+        </HashRouter>
+      </FeedbackProvider>
     </AuthProvider>
   );
 };

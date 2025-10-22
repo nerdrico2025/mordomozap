@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Button from '../components/Button';
@@ -10,16 +10,21 @@ const LoginPage: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
     
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { login, user } = useAuth();
+
+    useEffect(() => {
+        // Se o usuário for definido (login bem-sucedido), navega para o dashboard.
+        if (user) {
+            navigate('/dashboard');
+        }
+    }, [user, navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        setSuccess('');
 
         if (!email || !password) {
             setError('Por favor, preencha todos os campos');
@@ -29,11 +34,12 @@ const LoginPage: React.FC = () => {
         setLoading(true);
         try {
             await login(email, password);
-            setSuccess('Login realizado com sucesso!');
-            setTimeout(() => navigate('/dashboard'), 1500);
+            // Em caso de sucesso, o listener onAuthStateChange irá atualizar o 'user'.
+            // O useEffect acima irá então lidar com a navegação.
+            // O estado de 'loading' permanecerá 'true' até a navegação, o que é um bom feedback visual.
         } catch (err: any) {
             setError(err.message || 'E-mail ou senha inválidos.');
-            setLoading(false);
+            setLoading(false); // Desativa o loading apenas em caso de erro.
         }
     };
 
@@ -49,9 +55,8 @@ const LoginPage: React.FC = () => {
                     <input type="password" placeholder="Sua senha" value={password} onChange={e => setPassword(e.target.value)} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
                     
                     {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-                    {success && <p className="text-green-500 text-sm text-center">{success}</p>}
                     
-                    <Button type="submit" variant="primary" className="w-full" disabled={loading}>
+                    <Button type="submit" variant="primary" className="w-full" loading={loading} disabled={loading}>
                         {loading ? 'Entrando...' : 'Entrar'}
                     </Button>
                 </form>

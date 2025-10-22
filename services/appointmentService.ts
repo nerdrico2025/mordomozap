@@ -1,5 +1,7 @@
 import { supabase } from './supabaseClient'
-import type { Appointment } from './supabaseClient'
+// FIX: Changed import path for Appointment type from supabaseClient to the centralized types file.
+import type { Appointment } from '../types'
+import { agentService } from './agentService';
 
 export const appointmentService = {
   // Obter todos os agendamentos da empresa
@@ -116,7 +118,7 @@ export const appointmentService = {
     }
   },
 
-  // Verificar disponibilidade de horário
+  // Verificar disponibilidade de horário específico
   async checkAvailability(companyId: string, datetime: string, duration: number = 30): Promise<boolean> {
     try {
       const startTime = new Date(datetime)
@@ -136,5 +138,57 @@ export const appointmentService = {
       console.error('Erro ao verificar disponibilidade:', error)
       return false
     }
-  }
+  },
+
+  // Nova função para encontrar horários disponíveis em um dia
+  async findAvailableSlots(companyId: string, date: string): Promise<string[]> {
+    try {
+      console.log(`Buscando horários para ${companyId} na data ${date}`);
+      // Assegura que a data seja interpretada em UTC para consistência
+      const targetDate = new Date(`${date}T00:00:00Z`);
+      const dayOfWeek = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][targetDate.getUTCDay()];
+
+      const config = await agentService.getAgentConfig(companyId);
+      const company = (await supabase.from('companies').select('name').eq('id', companyId).single()).data;
+      const workingHours = config.workingHours.find(wh => wh.day === dayOfWeek);
+
+      if (!workingHours || !workingHours.enabled) {
+        return []; // Dia não trabalhado
+      }
+
+      const dayStartISO = targetDate.toISOString();
+      const dayEndISO = new Date(targetDate.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString();
+      const appointments = await this.getAppointments(companyId, dayStartISO, dayEndISO);
+      
+      const bookedSlots = new Set(appointments
+        .filter(a => a.status === 'confirmed')
+        .map(a => new Date(a.datetime_start).toISOString()));
+
+      const availableSlots: string[] = [];
+      const { slotDuration } = config.schedulingRules;
+
+      const [startHour, startMinute] = workingHours.start.split(':').map(Number);
+      const [endHour, endMinute] = workingHours.end.split(':').map(Number);
+
+      const slot = new Date(targetDate);
+      slot.setUTCHours(startHour, startMinute, 0, 0);
+
+      const endSlot = new Date(targetDate);
+      endSlot.setUTCHours(endHour, endMinute, 0, 0);
+
+      while (slot.getTime() < endSlot.getTime()) {
+        const slotISO = slot.toISOString();
+        if (!bookedSlots.has(slotISO)) {
+            // Retorna a hora no formato HH:MM
+            availableSlots.push(slot.toISOString().substr(11, 5));
+        }
+        slot.setUTCMinutes(slot.getUTCMinutes() + slotDuration);
+      }
+      
+      return availableSlots;
+    } catch (error) {
+      console.error('Erro ao buscar horários disponíveis:', error);
+      return [];
+    }
+  },
 }

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -20,12 +19,18 @@ const HomePage: React.FC = () => {
                         <p className="mt-6 text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
                             Com o MordomoZAP, você transforma seu WhatsApp em uma máquina de vendas e agendamentos, 24 horas por dia, 7 dias por semana.
                         </p>
-                        <div className="mt-10">
+                        <div className="mt-10 flex justify-center">
                             <Link to="/signup">
                                 <Button variant="primary" className="text-lg">Comece o trial de 3 dias</Button>
                             </Link>
                         </div>
                         <p className="mt-4 text-sm text-gray-500">Sem cartão de crédito. Cancele quando quiser.</p>
+                        <p className="mt-8 text-gray-700">
+                            Já tem uma conta?{' '}
+                            <Link to="/login" className="font-bold text-primary hover:underline">
+                                Faça login
+                            </Link>
+                        </p>
                     </div>
                 </section>
                 
@@ -69,7 +74,7 @@ const HomePage: React.FC = () => {
                     <div className="container mx-auto px-4 text-center">
                          <h2 className="text-3xl md:text-4xl font-bold text-gray-800">Pronto para automatizar seu negócio?</h2>
                         <p className="mt-4 text-lg text-gray-600">Comece seu teste gratuito de 3 dias agora mesmo.</p>
-                        <div className="mt-8">
+                        <div className="mt-8 flex justify-center">
                             <Link to="/signup">
                                 <Button variant="primary" className="text-lg">Começar Agora</Button>
                             </Link>
