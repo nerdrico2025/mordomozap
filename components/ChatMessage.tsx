@@ -15,10 +15,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     const { type, url } = message.payload_json;
 
     if (type === 'image') {
-      return <img src={url} alt="Mídia enviada" className="mt-2 rounded-lg max-w-xs" />;
+      return <img src={url} alt="Mídia enviada" className="mt-2 rounded-lg max-w-xs" loading="lazy" decoding="async" />;
     }
     if (type === 'video') {
-      return <video src={url} controls className="mt-2 rounded-lg max-w-xs" />;
+      return <video src={url} controls className="mt-2 rounded-lg max-w-xs" preload="metadata" />;
     }
     return null;
   };
@@ -33,4 +33,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   );
 };
 
-export default ChatMessage;
+export default React.memo(ChatMessage, (prev, next) => {
+  const prevPayloadUrl = prev.message.payload_json?.url;
+  const nextPayloadUrl = next.message.payload_json?.url;
+  return (
+    prev.message.id === next.message.id &&
+    prev.message.text === next.message.text &&
+    prevPayloadUrl === nextPayloadUrl &&
+    prev.message.direction === next.message.direction
+  );
+});

@@ -1,0 +1,99 @@
+{
+  "tech_stack": [
+    "TypeScript",
+    "React 19",
+    "Vite 6",
+    "React Router DOM 7",
+    "Recharts",
+    "Express 5 (proxy)",
+    "Supabase (Postgres + Auth + Storage)",
+    "Axios",
+    "Tailwind (via CDN)"
+  ],
+  "features": [
+    {
+      "name": "App routing and auth guards",
+      "description": "Roteamento com HashRouter, rotas privadas com verificação de autenticação e roles.",
+      "files": ["App.tsx", "hooks/useAuth.tsx", "types.ts"]
+    },
+    {
+      "name": "Home and marketing pages",
+      "description": "Página inicial com CTA, pricing e suporte.",
+      "files": ["pages/HomePage.tsx", "pages/PricingPage.tsx", "pages/SupportPage.tsx"]
+    },
+    {
+      "name": "Auth pages",
+      "description": "Cadastro e login de usuários integrados ao Supabase.",
+      "files": ["pages/SignUpPage.tsx", "pages/LoginPage.tsx", "hooks/useAuth.tsx", "services/authService.ts"]
+    },
+    {
+      "name": "Onboarding with AI assistant",
+      "description": "Fluxo de onboarding com assistente IA simulando respostas do Gemini.",
+      "files": ["pages/OnboardingPage.tsx", "services/geminiService.ts"]
+    },
+    {
+      "name": "Dashboard analytics",
+      "description": "Dashboard com KPIs e gráfico de conversas.",
+      "files": ["pages/DashboardPage.tsx", "services/analyticsService.ts"]
+    },
+    {
+      "name": "Conversations and chat",
+      "description": "Listagem de conversas, chat por conversa e envio de mensagens com upload para Storage.",
+      "files": ["pages/ConversationsPage.tsx", "pages/ChatPage.tsx", "services/chatService.ts", "components/ChatMessage.tsx"]
+    },
+    {
+      "name": "Calendar and appointments",
+      "description": "Página de calendário e serviço de agendamentos.",
+      "files": ["pages/CalendarPage.tsx", "services/appointmentService.ts"]
+    },
+    {
+      "name": "Settings with tabs",
+      "description": "Configurações (Geral, Profissionais, Produtos, Integração, Agendamento, Horários, FAQs).",
+      "files": [
+        "pages/SettingsPage.tsx",
+        "pages/Settings/GeneralTab.tsx",
+        "pages/Settings/ProfessionalsTab.tsx",
+        "pages/Settings/ProductsTab.tsx",
+        "pages/Settings/IntegrationTab.tsx",
+        "pages/Settings/SchedulingTab.tsx",
+        "pages/Settings/HoursTab.tsx",
+        "pages/Settings/FaqsTab.tsx",
+        "components/WhatsAppConnection.tsx",
+        "components/ProfessionalCard.tsx"
+      ]
+    },
+    {
+      "name": "WhatsApp proxy integration",
+      "description": "Integração com UAZAPI via backend proxy Express, com endpoints /api/uaz.",
+      "files": ["server.ts", "server/routes/uaz.ts", "services/whatsappService.ts"]
+    },
+    {
+      "name": "UI components",
+      "description": "Botões, cards, layout, header/footer e toast.",
+      "files": [
+        "components/Button.tsx",
+        "components/Card.tsx",
+        "components/Layout.tsx",
+        "components/Header.tsx",
+        "components/Footer.tsx",
+        "components/Toast.tsx",
+        "components/TestWhatsappButton.tsx"
+      ]
+    },
+    {
+      "name": "Backend services and agents",
+      "description": "Serviços auxiliares de agente e mock API.",
+      "files": ["services/agentService.ts", "services/mockApi.ts"]
+    },
+    {
+      "name": "Supabase clients",
+      "description": "Clientes Supabase com chave service_role (apenas para preview) e admin.",
+      "files": ["services/supabaseClient.ts", "services/supabaseAdminClient.ts", "supabase/fix_user_creation_trigger.sql"]
+    },
+    {
+      "name": "Build and preview config",
+      "description": "Configuração Vite, index.html com Tailwind CDN e import maps, ponto de entrada React.",
+      "files": ["vite.config.ts", "index.html", "index.tsx"]
+    }
+  ]
+}

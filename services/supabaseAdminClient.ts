@@ -12,4 +12,12 @@ const supabaseServiceRoleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ
 
 // Este cliente é para operações de dados que precisam bypassar o RLS.
 // NÃO deve ser usado para autenticação.
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  auth: {
+    // Evita interferir na sessão do usuário e a duplicação do GoTrueClient
+    persistSession: false,
+    autoRefreshToken: false,
+    // Usa uma storage key diferente para não conflitar com o cliente público
+    storageKey: 'sb-admin',
+  },
+});

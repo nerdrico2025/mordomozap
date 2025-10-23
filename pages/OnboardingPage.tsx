@@ -274,7 +274,7 @@ const OnboardingPage = () => {
                         <h2 className="text-xl font-bold text-gray-800">Conectar WhatsApp</h2>
                         <p className="text-gray-600 mb-6">Este é o passo mais importante. Conecte seu número para ativar o assistente.</p>
                         <div className="flex justify-center">
-                            <WhatsAppConnection />
+                            <WhatsAppConnection autoStart />
                         </div>
                         <p className="mt-4 text-sm text-gray-500 text-center">Você pode pular e fazer isso depois na página de Configurações, mas o robô não funcionará até que a conexão seja feita.</p>
                     </>

@@ -74,8 +74,13 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         if (profile) {
           setUser(profile);
         } else {
-          console.error('❌ [useAuth] Perfil não encontrado via listener após várias tentativas. Forçando logout para prevenir estado inconsistente.');
-          authService.signOut(); // Dispara um evento SIGNED_OUT
+          console.warn('⚠️ [useAuth] Perfil não encontrado via listener após tentativas. Prosseguindo com usuário parcial e redirecionando para onboarding.');
+          const partialUser: AuthStateUser = {
+            id: session.user.id,
+            email: session.user.email ?? undefined,
+            name: (session.user.user_metadata as any)?.name ?? undefined,
+          };
+          setUser(partialUser);
         }
         
         setLoading(false);
