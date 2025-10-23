@@ -1,0 +1,574 @@
+[
+  {
+    "id": "TC001",
+    "title": "User Signup with valid credentials",
+    "description": "Verify that a new user can successfully sign up with valid input data using Supabase authentication.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the signup page."
+      },
+      {
+        "type": "action",
+        "description": "Input valid email, password, and required user details."
+      },
+      {
+        "type": "action",
+        "description": "Submit the signup form."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is registered and redirected to onboarding."
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "User Signup with existing email",
+    "description": "Ensure signup fails with an appropriate error when using an email that is already registered.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the signup page."
+      },
+      {
+        "type": "action",
+        "description": "Input existing email and any password."
+      },
+      {
+        "type": "action",
+        "description": "Submit the signup form."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify error message indicates email is already in use."
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "User Login with valid credentials",
+    "description": "Verify successful login with valid user email and password via Supabase authentication.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page."
+      },
+      {
+        "type": "action",
+        "description": "Enter valid email and password."
+      },
+      {
+        "type": "action",
+        "description": "Click the login button."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is authenticated and redirected to onboarding or dashboard depending on status."
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "User Login with invalid credentials",
+    "description": "Verify login fails with invalid credentials and appropriate error message is shown.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page."
+      },
+      {
+        "type": "action",
+        "description": "Enter invalid email or password."
+      },
+      {
+        "type": "action",
+        "description": "Click the login button."
+      },
+      {
+        "type": "assertion",
+        "description": "Check error message indicates invalid login credentials."
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Onboarding flow completion",
+    "description": "Verify new user can complete the multi-step guided onboarding including business details, AI agent setup, and WhatsApp integration.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as a new user and navigate to onboarding page."
+      },
+      {
+        "type": "action",
+        "description": "Input business profile information and proceed to next step."
+      },
+      {
+        "type": "action",
+        "description": "Configure AI agent settings as requested."
+      },
+      {
+        "type": "action",
+        "description": "Perform WhatsApp integration by scanning QR code."
+      },
+      {
+        "type": "action",
+        "description": "Complete the onboarding process."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify business configuration is saved correctly and user is redirected to dashboard."
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Onboarding QR code timeout or failure",
+    "description": "Check the system behavior when WhatsApp QR code integration process fails or times out during onboarding.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Start onboarding and reach WhatsApp QR code step."
+      },
+      {
+        "type": "action",
+        "description": "Simulate QR code scan failure or timeout."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify appropriate error messages are shown and user can retry the integration."
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Dashboard analytics accuracy and realtime update",
+    "description": "Verify dashboard KPIs, charts, and conversation metrics display accurate data and refresh in real-time.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login and navigate to the dashboard page."
+      },
+      {
+        "type": "action",
+        "description": "Simulate new conversations and AI interactions."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm KPIs, trend graphs, and metrics update correctly without manual refresh."
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Conversation management: send and receive text messages",
+    "description": "Verify user can send and receive text messages in chat interface with real-time AI streaming responses.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open a conversation from centralized inbox."
+      },
+      {
+        "type": "action",
+        "description": "Send a text message."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify message appears instantly in chat interface."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify AI agent response streams progressively without interruption."
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Conversation management: send and receive multimedia messages",
+    "description": "Verify user can successfully upload and send images and videos; system supports real-time receiving with stable storage handling.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open a chat conversation."
+      },
+      {
+        "type": "action",
+        "description": "Upload an image and send."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify image is uploaded to Supabase storage and displayed in chat."
+      },
+      {
+        "type": "action",
+        "description": "Upload a video and send."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify video is uploaded and properly displayed or playable in chat."
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Calendar appointment creation and status update",
+    "description": "Verify user can create appointment bookings via calendar interface and update status with immediate UI reflection.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to calendar page."
+      },
+      {
+        "type": "action",
+        "description": "Create a new appointment with valid details."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify appointment appears in calendar immediately."
+      },
+      {
+        "type": "action",
+        "description": "Update appointment status (e.g., confirm or cancel)."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify status update reflects instantly on calendar UI."
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Settings panel persistence and update",
+    "description": "Verify that changes made in each settings tab (general, professionals, products, integration, scheduling, hours, FAQs) persist and reflect correctly backend and UI.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the settings page."
+      },
+      {
+        "type": "action",
+        "description": "Modify general settings and save."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify changes persist on page reload and backend data."
+      },
+      {
+        "type": "action",
+        "description": "Modify professional profiles and save."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify updated professional data reflects immediately."
+      },
+      {
+        "type": "action",
+        "description": "Change products/services entries and save."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm product/service updates persist."
+      },
+      {
+        "type": "action",
+        "description": "Adjust scheduling rules and business hours."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify scheduling constraints and hours save and work as expected."
+      },
+      {
+        "type": "action",
+        "description": "Edit FAQs content and save."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm FAQ changes persist and display properly."
+      },
+      {
+        "type": "action",
+        "description": "Test WhatsApp reconnection process from integration tab."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that reconnection is successful and reflected in backend."
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "WhatsApp proxy integration send and receive messages",
+    "description": "Ensure backend proxy communicates correctly with UAZAPI for sending and receiving WhatsApp messages securely.",
+    "category": "integration",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send a WhatsApp message through backend proxy endpoint (/api/uaz)."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify message is delivered through UAZAPI and response status is success."
+      },
+      {
+        "type": "action",
+        "description": "Simulate receiving a WhatsApp message via webhook or polling."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify message is received and stored/displayed properly."
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Super Admin Panel: view and manage client accounts",
+    "description": "Verify super admin can securely access client account listings, view subscription plans, trials, and perform administrative actions.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as super admin user."
+      },
+      {
+        "type": "action",
+        "description": "Navigate to the super admin panel."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify client accounts, subscription plans, and trial statuses are displayed correctly."
+      },
+      {
+        "type": "action",
+        "description": "Perform administrative actions like suspending or updating client info."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify actions persist and have expected effects."
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Security: role-based access control enforcement",
+    "description": "Verify access controls and route guards prevent unauthorized access based on user roles and session validity.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to navigate to restricted pages (e.g., super admin panel) as non-authorized user."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied and user is redirected or shown error."
+      },
+      {
+        "type": "action",
+        "description": "Login as authorized role and verify access granted."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure session expiration logs user out or denies access accordingly."
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Security: backend enforcement of privileged operations",
+    "description": "Ensure privileged backend operations, especially using admin keys or service_role keys, do not expose vulnerabilities and run only in backend.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to perform privileged actions from frontend client."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify privileged API requests are rejected or not accessible from frontend."
+      },
+      {
+        "type": "action",
+        "description": "Perform privileged action via backend admin client."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify action completes successfully and securely."
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Integration error handling with external APIs",
+    "description": "Verify system gracefully handles errors from UAZAPI WhatsApp integration and Google Gemini AI service and recovers or notifies users appropriately.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Simulate UAZAPI timeout or failure when sending WhatsApp messages."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify error is caught, retries or error messages shown without crashing frontend."
+      },
+      {
+        "type": "action",
+        "description": "Simulate Gemini AI service failure or incomplete response during onboarding or chat."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify UI handles incomplete or error responses gracefully and informs the user."
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Chat UI components behavior and responsiveness",
+    "description": "Verify chat interface components (buttons, message cards, toast notifications) function correctly and UI layout adjusts on various devices.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open chat page on desktop and mobile viewport."
+      },
+      {
+        "type": "action",
+        "description": "Send and receive text and multimedia messages."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify buttons, cards, toast notifications appear and behave as expected without visual glitches."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure chat interface layout is responsive and usable."
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "Session expiration and automatic logout",
+    "description": "Verify that when user session expires, the system logs out the user and redirects to login, preventing further access.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login and maintain a session."
+      },
+      {
+        "type": "action",
+        "description": "Simulate session expiry or token invalidation."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is automatically logged out and redirected to login page."
+      },
+      {
+        "type": "action",
+        "description": "Attempt navigation to protected resources after expiration."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm access is denied and login required."
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "FAQ tab search and update behavior",
+    "description": "Ensure FAQ management tab allows searching, adding, editing, deleting entries and changes persist correctly.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open FAQs tab in settings."
+      },
+      {
+        "type": "action",
+        "description": "Search for FAQ entries matching keywords."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify search results filter correctly."
+      },
+      {
+        "type": "action",
+        "description": "Add new FAQ entry and save."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify new FAQ appears in list and stored backend."
+      },
+      {
+        "type": "action",
+        "description": "Edit an existing FAQ entry."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm updated FAQ reflects changes."
+      },
+      {
+        "type": "action",
+        "description": "Delete an FAQ entry."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify entry is removed from list and backend."
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "Retry and recovery mechanism for failed media uploads",
+    "description": "Test the system behavior and recovery options when file uploads for chat multimedia messages fail due to network or service errors.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to upload a large image/video in chat with simulated network failure."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify upload failure is detected and user is notified."
+      },
+      {
+        "type": "action",
+        "description": "Use retry option to reupload the file."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm that media upload succeeds on retry and message is sent."
+      }
+    ]
+  }
+]

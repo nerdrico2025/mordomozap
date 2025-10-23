@@ -1,0 +1,190 @@
+{
+  "meta": {
+    "project": "MordomoZAP",
+    "date": "2025-10-20",
+    "prepared_by": "Software Development Manager"
+  },
+  "product_overview": "MordomoZAP is a SaaS platform designed to help small and medium businesses automate customer service and appointment scheduling through WhatsApp. It functions as a virtual butler available 24/7 to answer FAQs, qualify leads, sell products or services, and schedule appointments seamlessly integrated with Brazil's most popular communication channel.",
+  "core_goals": [
+    "Enable small and medium businesses to automate customer support and scheduling with minimal technical knowledge.",
+    "Deliver a conversational AI assistant that manages customer interactions intelligently and efficiently.",
+    "Provide business owners with real-time analytics and easy management of conversations and appointments.",
+    "Ensure multi-channel accessibility, primarily focused on WhatsApp integration.",
+    "Offer a modular and easy-to-configure platform with onboarding, settings customization, and user role management.",
+    "Maintain high security standards, protecting sensitive business data and access controls."
+  ],
+  "key_features": [
+    "User Account Management: Secure signup, login, and access control integrated with Supabase authentication.",
+    "Guided Onboarding Flow: Multi-step setup assistant helping users configure business details, AI agent, and WhatsApp integration.",
+    "Dashboard Analytics: Real-time KPIs, conversation metrics, and visualization charts showing business and agent performance.",
+    "Conversation Management: Centralized inbox, chat interface with real-time AI streaming responses, and multimodal messaging support (text, images, and videos).",
+    "Calendar and Appointments: Visual calendar interface to view, manage, and update appointment statuses.",
+    "Comprehensive Settings Panel: Modular tabs for general settings, professionals, products/services, scheduling rules, FAQs, and WhatsApp integration management.",
+    "WhatsApp Proxy Integration: Secure backend proxy (Express) to UAZAPI for sending and receiving WhatsApp messages safely.",
+    "Super Admin Panel: Restricted admin area to manage client accounts, subscription plans, and trials.",
+    "UI Components: Well-designed buttons, cards, layout components, toast notifications, and integration feedback."
+  ],
+  "user_flow_summary": [
+    "User signs up and logs in with secure authentication.",
+    "New users undergo a guided onboarding process to configure their business profile and connect WhatsApp via QR code.",
+    "User accesses the dashboard to review analytics and KPIs related to AI assistant performance and customer interactions.",
+    "Business owner manages ongoing conversations and can intervene in chats, sending text and multimedia messages.",
+    "User views and manages appointments on the calendar page, editing or confirming bookings.",
+    "User navigates to settings to configure agent behavior, business hours, services, professionals, WhatsApp connection, and FAQs.",
+    "Administrators use the super admin panel to monitor client accounts, subscriptions, and audit usage.",
+    "Throughout the experience, security controls and role checks prevent unauthorized data access."
+  ],
+  "validation_criteria": [
+    "All user authentication and route guard mechanisms must enforce role-based access and session validity.",
+    "Onboarding must properly capture and store business configuration data, successfully linking to WhatsApp.",
+    "The AI assistant responses should stream progressively and be accurately reflected in the chat interface without delays or interruptions.",
+    "Dashboard analytics must accurately present KPIs and conversation trends with real-time data refresh.",
+    "Chat interface must support text and multimedia message sending and receiving with stable upload and download through Supabase storage.",
+    "Calendar appointments must update status correctly and reflect changes immediately on the UI.",
+    "Settings changes, including WhatsApp reconnection and product/service edits, must persist and reflect in backend data.",
+    "Super Admin functionalities must correctly display client data and allow administrative actions securely.",
+    "Security vulnerabilities, especially involving the use of administrative keys, must be mitigated by ensuring all privileged operations run in the backend.",
+    "All integrations with external APIs like WhatsApp (UAZAPI) and AI services (Google Gemini) must handle errors gracefully and maintain service reliability."
+  ],
+  "code_summary": {
+    "tech_stack": [
+      "TypeScript",
+      "React 19",
+      "Vite 6",
+      "React Router DOM 7",
+      "Recharts",
+      "Express 5 (proxy)",
+      "Supabase (Postgres + Auth + Storage)",
+      "Axios",
+      "Tailwind (via CDN)"
+    ],
+    "features": [
+      {
+        "name": "App routing and auth guards",
+        "description": "Roteamento com HashRouter, rotas privadas com verificação de autenticação e roles.",
+        "files": [
+          "App.tsx",
+          "hooks/useAuth.tsx",
+          "types.ts"
+        ]
+      },
+      {
+        "name": "Home and marketing pages",
+        "description": "Página inicial com CTA, pricing e suporte.",
+        "files": [
+          "pages/HomePage.tsx",
+          "pages/PricingPage.tsx",
+          "pages/SupportPage.tsx"
+        ]
+      },
+      {
+        "name": "Auth pages",
+        "description": "Cadastro e login de usuários integrados ao Supabase.",
+        "files": [
+          "pages/SignUpPage.tsx",
+          "pages/LoginPage.tsx",
+          "hooks/useAuth.tsx",
+          "services/authService.ts"
+        ]
+      },
+      {
+        "name": "Onboarding with AI assistant",
+        "description": "Fluxo de onboarding com assistente IA simulando respostas do Gemini.",
+        "files": [
+          "pages/OnboardingPage.tsx",
+          "services/geminiService.ts"
+        ]
+      },
+      {
+        "name": "Dashboard analytics",
+        "description": "Dashboard com KPIs e gráfico de conversas.",
+        "files": [
+          "pages/DashboardPage.tsx",
+          "services/analyticsService.ts"
+        ]
+      },
+      {
+        "name": "Conversations and chat",
+        "description": "Listagem de conversas, chat por conversa e envio de mensagens com upload para Storage.",
+        "files": [
+          "pages/ConversationsPage.tsx",
+          "pages/ChatPage.tsx",
+          "services/chatService.ts",
+          "components/ChatMessage.tsx"
+        ]
+      },
+      {
+        "name": "Calendar and appointments",
+        "description": "Página de calendário e serviço de agendamentos.",
+        "files": [
+          "pages/CalendarPage.tsx",
+          "services/appointmentService.ts"
+        ]
+      },
+      {
+        "name": "Settings with tabs",
+        "description": "Configurações (Geral, Profissionais, Produtos, Integração, Agendamento, Horários, FAQs).",
+        "files": [
+          "pages/SettingsPage.tsx",
+          "pages/Settings/GeneralTab.tsx",
+          "pages/Settings/ProfessionalsTab.tsx",
+          "pages/Settings/ProductsTab.tsx",
+          "pages/Settings/IntegrationTab.tsx",
+          "pages/Settings/SchedulingTab.tsx",
+          "pages/Settings/HoursTab.tsx",
+          "pages/Settings/FaqsTab.tsx",
+          "components/WhatsAppConnection.tsx",
+          "components/ProfessionalCard.tsx"
+        ]
+      },
+      {
+        "name": "WhatsApp proxy integration",
+        "description": "Integração com UAZAPI via backend proxy Express, com endpoints /api/uaz.",
+        "files": [
+          "server.ts",
+          "server/routes/uaz.ts",
+          "services/whatsappService.ts"
+        ]
+      },
+      {
+        "name": "UI components",
+        "description": "Botões, cards, layout, header/footer e toast.",
+        "files": [
+          "components/Button.tsx",
+          "components/Card.tsx",
+          "components/Layout.tsx",
+          "components/Header.tsx",
+          "components/Footer.tsx",
+          "components/Toast.tsx",
+          "components/TestWhatsappButton.tsx"
+        ]
+      },
+      {
+        "name": "Backend services and agents",
+        "description": "Serviços auxiliares de agente e mock API.",
+        "files": [
+          "services/agentService.ts",
+          "services/mockApi.ts"
+        ]
+      },
+      {
+        "name": "Supabase clients",
+        "description": "Clientes Supabase com chave service_role (apenas para preview) e admin.",
+        "files": [
+          "services/supabaseClient.ts",
+          "services/supabaseAdminClient.ts",
+          "supabase/fix_user_creation_trigger.sql"
+        ]
+      },
+      {
+        "name": "Build and preview config",
+        "description": "Configuração Vite, index.html com Tailwind CDN e import maps, ponto de entrada React.",
+        "files": [
+          "vite.config.ts",
+          "index.html",
+          "index.tsx"
+        ]
+      }
+    ]
+  }
+}

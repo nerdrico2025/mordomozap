@@ -5,30 +5,38 @@ import { chatService } from '../services/chatService';
 // FIX: Changed import path for Conversation type from supabaseClient to the centralized types file.
 import type { Conversation } from '../types';
 import Card from '../components/Card';
+import { useFeedback } from '../hooks/useFeedback';
 
 const ConversationsPage: React.FC = () => {
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const pageSize = 20;
     const { user } = useAuth();
+    const { error: showError } = useFeedback();
+
+    const loadConversations = async (nextPage: number = 0) => {
+        if (!user?.company_id) return;
+        try {
+            setLoading(true);
+            const data = await chatService.getConversations(user.company_id, nextPage, pageSize);
+            setConversations(prev => nextPage === 0 ? data : [...prev, ...data]);
+            setHasMore(data.length === pageSize);
+            setPage(nextPage);
+        } catch (error) {
+            console.error('Failed to fetch conversations:', error);
+            showError('Falha ao carregar conversas.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchConversations = async () => {
-            if (user?.company_id) {
-                try {
-                    setLoading(true);
-                    const data = await chatService.getConversations(user.company_id);
-                    setConversations(data);
-                } catch (error) {
-                    console.error("Failed to fetch conversations:", error);
-                } finally {
-                    setLoading(false);
-                }
-            }
-        };
-        fetchConversations();
+        loadConversations(0);
     }, [user]);
 
-    if (loading) {
+    if (loading && page === 0) {
         return <div className="text-center p-8">Carregando conversas...</div>;
     }
 
@@ -70,6 +78,13 @@ const ConversationsPage: React.FC = () => {
                                 ))}
                             </tbody>
                         </table>
+                        {hasMore && (
+                            <div className="mt-4 text-center">
+                                <button onClick={() => loadConversations(page + 1)} disabled={loading} className="px-4 py-2 bg-primary text-white rounded-md disabled:opacity-50">
+                                    {loading ? 'Carregando...' : 'Carregar mais'}
+                                </button>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <p className="text-gray-500 text-center py-8">Nenhuma conversa encontrada.</p>

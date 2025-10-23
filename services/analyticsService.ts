@@ -11,6 +11,22 @@ export interface IntentInsight {
     examples: any; // JSON
 }
 
+// Adiciona utilitário de timeout para evitar travas em consultas
+const withTimeout = async <T>(promise: Promise<T>, ms: number = 10000, label?: string): Promise<T> => {
+  let timer: any;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      console.error(`[Analytics Timeout] ${label || 'operation'} exceeded ${ms}ms`);
+      reject(new Error('timeout'));
+    }, ms);
+  });
+  try {
+    const result: any = await Promise.race([promise, timeout]);
+    return result as T;
+  } finally {
+    clearTimeout(timer);
+  }
+};
 
 export const analyticsService = {
   // Obter insights de intenções
@@ -19,12 +35,17 @@ export const analyticsService = {
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - days)
 
-      const { data, error } = await supabase
-        .from('intents_insights')
-        .select('*')
-        .eq('company_id', companyId)
-        .gte('last_seen', startDate.toISOString())
-        .order('count', { ascending: false })
+      console.time('analytics:getIntentInsights');
+      const p1 = (async () => {
+        return await supabase
+          .from('intents_insights')
+          .select('*')
+          .eq('company_id', companyId)
+          .gte('last_seen', startDate.toISOString())
+          .order('count', { ascending: false });
+      })();
+      const { data, error } = await withTimeout(p1, 10000, 'getIntentInsights');
+      console.timeEnd('analytics:getIntentInsights');
 
       if (error) throw error
       return data || []
@@ -53,11 +74,16 @@ export const analyticsService = {
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - days)
 
-      const { data, error } = await supabase
-        .from('conversations')
-        .select('started_at, status')
-        .eq('company_id', companyId)
-        .gte('started_at', startDate.toISOString())
+      console.time('analytics:getConversationMetrics');
+      const p2 = (async () => {
+        return await supabase
+          .from('conversations')
+          .select('started_at, status')
+          .eq('company_id', companyId)
+          .gte('started_at', startDate.toISOString());
+      })();
+      const { data, error } = await withTimeout(p2, 10000, 'getConversationMetrics');
+      console.timeEnd('analytics:getConversationMetrics');
 
       if (error) throw error
 
@@ -90,10 +116,15 @@ export const analyticsService = {
       startDate.setDate(startDate.getDate() - days)
 
       // Buscar conversas da empresa
-      const { data: conversations, error: convError } = await supabase
-        .from('conversations')
-        .select('id')
-        .eq('company_id', companyId)
+      console.time('analytics:getMessageConvIds');
+      const p3 = (async () => {
+        return await supabase
+          .from('conversations')
+          .select('id')
+          .eq('company_id', companyId);
+      })();
+      const { data: conversations, error: convError } = await withTimeout(p3, 10000, 'getMessageConvIds');
+      console.timeEnd('analytics:getMessageConvIds');
 
       if (convError) throw convError
 
@@ -104,11 +135,16 @@ export const analyticsService = {
       }
 
       // Buscar mensagens dessas conversas
-      const { data: messages, error: msgError } = await supabase
-        .from('messages')
-        .select('direction')
-        .in('conversation_id', conversationIds)
-        .gte('timestamp', startDate.toISOString())
+      console.time('analytics:getMessageList');
+      const p4 = (async () => {
+        return await supabase
+          .from('messages')
+          .select('direction')
+          .in('conversation_id', conversationIds)
+          .gte('timestamp', startDate.toISOString());
+      })();
+      const { data: messages, error: msgError } = await withTimeout(p4, 10000, 'getMessageMetrics');
+      console.timeEnd('analytics:getMessageList');
 
       if (msgError) throw msgError
 

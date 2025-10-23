@@ -1,0 +1,16 @@
+{
+  "status": "init",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:4322",
+  "executionArgs": {
+    "projectName": "mordomozap",
+    "projectPath": "/Users/rafaelcruz/Documents/TRAE/mordomozap",
+    "testIds": [],
+    "additionalInstruction": "",
+    "envs": {
+      "API_KEY": "sk-user-Y9v4yvU2dKgPUs0bmwk4Lpu8ofDAZEZkVwaI1Gkzlytcfyj3OKk8fL1sc5VqRHgnxivjFV6d_oWQQMDbi6GAQ9lznjgYRw9GVvBHGQsEV2cdDmrfpHhsUeqJtCNWLofaglk"
+    }
+  },
+  "proxy": "http://a6db3a52-0ecf-4187-b512-8f42545a622c:WA37Cd07mY43xmZ632bskYraEiGisJxq@tun.testsprite.com:8080"
+}

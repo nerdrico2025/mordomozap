@@ -6,6 +6,7 @@ import { analyticsService, IntentInsight } from '../services/analyticsService';
 import type { Conversation } from '../types';
 import Card from '../components/Card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 
 // FIX: Made the `value` prop optional to support cards that display child elements without a primary KPI value.
 const KpiCard: React.FC<{ title: string; value?: string | number; children?: React.ReactNode }> = ({ title, value, children }) => (
@@ -24,44 +25,73 @@ const DashboardPage: React.FC = () => {
     const { user } = useAuth();
     const [avgResponseTime, setAvgResponseTime] = useState('');
     const [dailyMetrics, setDailyMetrics] = useState<{ date: string; total: number }[]>([]);
+    const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     const fetchData = async () => {
-        if (user?.company_id) {
-            try {
-                // Fetch all data in parallel
-                const [convData, metricsData, insightsData, avgTimeData] = await Promise.all([
-                    chatService.getConversations(user.company_id),
-                    analyticsService.getConversationMetrics(user.company_id, 30),
-                    analyticsService.getIntentInsights(user.company_id, 7),
-                    analyticsService.getAvgResponseTime(user.company_id, 30)
-                ]);
+        const timeoutMs = 12000;
+        const timeoutId = setTimeout(() => {
+            console.error(`[Dashboard] Timeout: carregamento excedeu ${timeoutMs}ms. userId=${user?.id} company=${user?.company_id}`);
+            setError('Tempo excedido ao carregar o dashboard. Tente novamente.');
+            setLoading(false);
+        }, timeoutMs);
 
-                setConversations(convData);
-                setInsights(insightsData);
-                setAvgResponseTime(avgTimeData);
-
-                // Format data for chart
-                const chartData = metricsData.map(day => ({
-                  date: new Date(day.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-                  total: day.total
-                }));
-                setDailyMetrics(chartData);
-
-                // Process metrics for KPI cards
-                const totalStats = metricsData.reduce((acc, day) => {
-                    acc.total += day.total;
-                    acc.open += day.open;
-                    acc.closed += day.closed;
-                    return acc;
-                }, { total: 0, open: 0, closed: 0 });
-                setStats(totalStats);
-
-            } catch (error) {
-                console.error("Failed to fetch dashboard data:", error);
-            } finally {
-                setLoading(false);
+        try {
+            if (!user) {
+                console.error('[Dashboard] Usuário inexistente no contexto após login.');
+                setError('Sessão de usuário ausente após login.');
+                return;
             }
+            if (!user.company_id) {
+                console.error('[Dashboard] Usuário autenticado sem company_id. Redirecionando para onboarding...', { userId: user.id });
+                setError('Perfil incompleto: vincule sua empresa para acessar o dashboard.');
+                navigate('/onboarding');
+                return;
+            }
+
+            console.group('[Dashboard] Fetch');
+            console.time('[Dashboard] total');
+            const [convData, metricsData, insightsData, avgTimeData] = await Promise.all([
+                chatService.getConversations(user.company_id).catch(err => { console.error('[Dashboard] getConversations falhou:', err); return []; }),
+                analyticsService.getConversationMetrics(user.company_id, 30).catch(err => { console.error('[Dashboard] getConversationMetrics falhou:', err); return []; }),
+                analyticsService.getIntentInsights(user.company_id, 7).catch(err => { console.error('[Dashboard] getIntentInsights falhou:', err); return []; }),
+                analyticsService.getAvgResponseTime(user.company_id, 30).catch(err => { console.error('[Dashboard] getAvgResponseTime falhou:', err); return '—'; })
+            ]);
+            console.timeEnd('[Dashboard] total');
+            console.groupEnd();
+
+            setConversations(convData);
+            setInsights(insightsData);
+            setAvgResponseTime(avgTimeData);
+
+            const chartData = metricsData.map(day => ({
+              date: new Date(day.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+              total: day.total
+            }));
+            setDailyMetrics(chartData);
+
+            const totals = { total: 0, open: 0, closed: 0 };
+            metricsData.forEach(day => {
+                totals.total += day.total;
+                totals.open += day.open;
+                totals.closed += day.closed;
+            });
+            setStats(totals);
+
+        } catch (error) {
+            console.error('[Dashboard] Falha ao buscar dados:', error);
+            setError('Não foi possível carregar os dados do dashboard.');
+        } finally {
+            clearTimeout(timeoutId);
+            setLoading(false);
         }
+    };
+
+    const retry = () => {
+        console.log('[Dashboard] Tentando novamente carregar dados...');
+        setError(null);
+        setLoading(true);
+        fetchData();
     };
 
     useEffect(() => {
@@ -86,6 +116,21 @@ const DashboardPage: React.FC = () => {
 
     if (loading) {
         return <div className="flex justify-center items-center h-full"><p>Carregando dashboard...</p></div>;
+    }
+
+    if (!loading && error) {
+        return (
+            <div className="flex justify-center items-center h-full">
+                <Card>
+                    <h2 className="text-xl font-bold text-gray-800 mb-2">Falha ao carregar o dashboard</h2>
+                    <p className="text-sm text-gray-600 mb-4">{error}</p>
+                    <div className="flex gap-3">
+                        <button className="px-4 py-2 bg-primary text-white rounded" onClick={retry}>Tentar novamente</button>
+                        <button className="px-4 py-2 bg-gray-200 text-gray-800 rounded" onClick={() => navigate('/onboarding')}>Ir para onboarding</button>
+                    </div>
+                </Card>
+            </div>
+        );
     }
 
     return (
